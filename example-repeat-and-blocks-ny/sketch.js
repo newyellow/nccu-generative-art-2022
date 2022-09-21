@@ -10,8 +10,10 @@ let paperColor;
 let paperTextureRandomness = 0.0;
 let paperLightness = 0;
 
+let splitChance = 0.8;
+
 function setup() {
-  createCanvas(2000, 2000);
+  createCanvas(2000, 3000);
   background(0);
 
   // setup lines color
@@ -22,7 +24,7 @@ function setup() {
 
   // setup paper color
   isDarkPaper = random(0.0, 1.0) > 0.7;
-  paperHue = random(0, 360);
+  paperHue = int(baseHue + 60) % 360;
   paperTextureRandomness = random(6, 20);
 
   colorMode(HSB);
@@ -33,10 +35,25 @@ function setup() {
     paperLightness = 90;
 
 
-  paperColor = color(paperHue, 3, paperLightness);
+  paperColor = color(paperHue, 12, paperLightness);
   background(paperColor);
-  // generateTexture();
 
+  // generateTexture();
+  splitChance = 0.6;
+  startDraw();
+
+  filter(BLUR, 1);
+
+  baseHue += 180;
+
+  splitChance = 0.9;
+  startDraw();
+  
+
+  // NYPaperTexture();
+}
+
+function startDraw () {
   let blockWCount = int(random(1, 4));
   let blockHCount = int(random(1, 4));
 
@@ -59,12 +76,12 @@ function setup() {
 
 function NYRect(drawX, drawY, drawWidth, drawHeight) {
   let minLength = 30;
-  let splitChance = 0.8;
+  let isSplit = random(0.0, 1.0) <= splitChance;
 
-  if(drawWidth < minLength || drawHeight < minLength)
-    splitChance = -1.0;
+  if (drawWidth < minLength || drawHeight < minLength)
+    isSplit = false;
 
-  if (random(0.0, 1.0) <= splitChance) // split
+  if (isSplit) // split
   {
     let horizontal = random(0.0, 1.0) > 0.5;
     let ratio = random(0.1, 0.9);
@@ -155,6 +172,40 @@ function generateTexture() {
       ellipseMode(CENTER);
       fill(paperHue + random(5), 6, paperLightness + noise(x / 100.0, y / 100.0) * paperTextureRandomness, 0.6);
       circle(x * 4, y * 4, dotWidth);
+    }
+  }
+}
+
+
+function NYPaperTexture() {
+  let paperNoiseX = random(-1000.0, 1000.0);
+  let paperNoiseY = random(-1000.0, 1000.0);
+  let paperXScale = 0.06;
+  let paperYScale = 2;
+
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      let nx = paperNoiseX + paperXScale * x;
+      let ny = paperNoiseY + paperYScale * y;
+
+      let noiseValue = noise(nx, ny);
+      let colorValue = 0.0;
+      let alphaValue = 10;
+
+      if (noiseValue > 0.46 && noiseValue < 0.50) {
+        colorValue = 0;
+        alphaValue = 30;
+      }
+      else {
+        alphaValue = 10;
+        if (noiseValue < 0.5)
+          colorValue = map(noiseValue, 0.0, 0.5, 120, 30);
+        else
+          colorValue = map(noiseValue, 0.5, 1.0, 255, 120);
+      }
+      colorMode(RGB);
+      stroke(colorValue, alphaValue);
+      point(x, y);
     }
   }
 }
