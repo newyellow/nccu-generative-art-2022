@@ -5,9 +5,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Sketch</title>
+  <title>Recursive and Blocks</title>
   <style>
-    html, body {
+    html,
+    body {
       margin: 0;
       padding: 0;
       border: 0;
@@ -21,11 +22,130 @@
       border: 0;
     }
   </style>
-
-  <script src="libraries/p5.min.js"></script>
+  <script id="fxhash-snippet">
+    //---- do not edit the following code (you can indent as you wish)
+    let search = new URLSearchParams(window.location.search)
+    let alphabet = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+    var fxhash = search.get('fxhash') || "oo" + Array(49).fill(0).map(_ => alphabet[(Math.random() * alphabet.length) | 0]).join('')
+    let b58dec = str => [...str].reduce((p, c) => p * alphabet.length + alphabet.indexOf(c) | 0, 0)
+    let fxhashTrunc = fxhash.slice(2)
+    let regex = new RegExp(".{" + ((fxhash.length / 4) | 0) + "}", 'g')
+    let hashes = fxhashTrunc.match(regex).map(h => b58dec(h))
+    let sfc32 = (a, b, c, d) => {
+      return () => {
+        a |= 0; b |= 0; c |= 0; d |= 0
+        var t = (a + b | 0) + d | 0
+        d = d + 1 | 0
+        a = b ^ b >>> 9
+        b = c + (c << 3) | 0
+        c = c << 21 | c >>> 11
+        c = c + t | 0
+        return (t >>> 0) / 4294967296
+      }
+    }
+    var fxrand = sfc32(...hashes)
+    // true if preview mode active, false otherwise
+    // you can append preview=1 to the URL to simulate preview active
+    var isFxpreview = search.get('preview') === "1"
+    // call this method to trigger the preview
+    function fxpreview() {
+      console.log("fxhash: TRIGGER PREVIEW")
+    }
+    //---- /do not edit the following code
+  </script>
+  <script src="p5.min.js"></script>
 </head>
 
 <body>
+  <script>
+    let NYsearch = new URLSearchParams(window.location.search)
+
+    function SetupFeatures() {
+      let features = {};
+      console.log(fxhash);
+
+      if (NYsearch.get('scale') == null)
+        scaler = 1.0;
+      else
+        scaler = parseFloat(search.get('scale'));
+
+      // grid
+      gridW = parseInt(fxrand() * 3) + 1;
+      gridH = parseInt(fxrand() * 3) + 1;
+      features["Base Grid"] = `(${gridW},${gridH})`;
+
+      // color hue
+      baseHue = fxrand() * 360;
+      features["Color Hue"] = parseInt(Math.round(baseHue / 10) * 10) + "°";
+
+      // color type
+      let colorTypeRandom = fxrand();
+      if (colorTypeRandom < 0.12) {
+        features["Color Type"] = "Single Tone";
+        colorType = 0; // single tone
+      }
+      else if (colorTypeRandom < 0.6) {
+        features["Color Type"] = "Friendly Tone";
+        colorType = 1; // friendly tone
+
+        if (fxrand() > 0.5)
+          friendlyColorDirection = -1;
+        else
+          friendlyColorDirection = 1;
+      }
+      else if (colorTypeRandom < 0.96) {
+        features["Color Type"] = "Contrast Tone";
+        colorType = 2; // contrast tone
+      }
+      else {
+        features["Color Type"] = "Mono";
+        colorType = 3; // mono
+      }
+
+      // triangle chance
+      let triangleChanceRandom = fxrand();
+      if (triangleChanceRandom < 0.25) {
+        triangleChance = 0.0;
+        features["Triangle Chance"] = "None";
+      }
+      else if (triangleChanceRandom < 0.55) {
+        triangleChance = 0.03;
+        features["Triangle Chance"] = "Low";
+      }
+      else if (triangleChanceRandom < 0.85) {
+        triangleChance = 0.12;
+        features["Triangle Chance"] = "Medium";
+      }
+      else {
+        triangleChance = 0.32;
+        features["Triangle Chance"] = "High";
+      }
+
+      // paper color
+      isDarkPaper = fxrand() > 0.5;
+      if (isDarkPaper)
+        features["Paper Color"] = "Dark";
+      else
+        features["Paper Color"] = "Light";
+
+      // canvas type
+      isLandscape = fxrand() > 0.5;
+      if (isLandscape)
+        features["Canvas"] = "Landscape";
+      else
+        features["Canvas"] = "Portrait";
+
+      // paper line type
+      isPaperLandscape = fxrand() > 0.5;
+      if (isPaperLandscape)
+        features["Paper Texture"] = "Horizontal";
+      else
+        features["Paper Texture"] = "Vertical";
+
+      console.log(features);
+      window.$fxhashFeatures = features;
+    }
+  </script>
   <script src="sketch.js"></script>
 </body>
 
