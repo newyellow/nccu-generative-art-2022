@@ -64,10 +64,11 @@
       let features = {};
       console.log(fxhash);
 
-      if (NYsearch.get('scale') == null)
-        scaler = 1.0;
-      else
-        scaler = parseFloat(search.get('scale'));
+      if (NYsearch.get('scale') != null)
+        scaler = parseFloat(search.get('scale')) * 0.5;
+
+      if (NYsearch.get('no_texture') == true)
+        SETTING_NO_TEXTURE = true;
 
       // grid
       gridW = parseInt(fxrand() * 3) + 1;

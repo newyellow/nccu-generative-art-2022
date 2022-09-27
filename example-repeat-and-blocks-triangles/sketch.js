@@ -2,7 +2,7 @@
 // traits
 let isLandscape = false;
 let isDarkPaper = false;
-let scaler = 1.0;
+let scaler = 0.5;
 let longSide = 4000;
 let isPaperLandscape = false;
 let colorType = 0;
@@ -14,6 +14,9 @@ let gridH = 0;
 let mainCanvas;
 let canvasWidth = 0;
 let canvasHeight = 0;
+
+// paper setting
+let SETTING_NO_TEXTURE = false;
 
 let drawFinished = false;
 
@@ -60,6 +63,7 @@ async function setup() {
     canvasHeight = longSide;
   }
 
+  console.log(`rendering: ${canvasWidth} x ${canvasHeight}`);
   mainCanvas = createGraphics(canvasWidth, canvasHeight);
 
 
@@ -403,6 +407,8 @@ async function NYRandomTextureLines() {
   else
     lineColor = color(0, 0, 30);
 
+  if (SETTING_NO_TEXTURE)
+    return;
 
   mainCanvas.stroke(lineColor);
   mainCanvas.strokeWeight(6 * scaler);
@@ -581,7 +587,7 @@ function keyPressed(e) {
 
   if (key == 's' || key == 'S') {
     let fileName = 'recursive and blocks-' + fxhash + '.png';
-    save(fileName);
+    save(mainCanvas, fileName);
   }
   else {
     if (drawFinished) {
@@ -603,6 +609,10 @@ function keyPressed(e) {
       else if (key == '6') {
         doRedraw(6);
       }
+      else if (key == 't' || key == 'T') {
+        SETTING_NO_TEXTURE = !SETTING_NO_TEXTURE;
+        doRedraw(scaler * 2);
+      }
     }
     else {
       console.log("Please wait till draw finish to re-draw");
@@ -613,9 +623,9 @@ function keyPressed(e) {
 function doRedraw(redrawScale) {
   fxrand = sfc32(...hashes);
 
-  scaler = redrawScale;
+  scaler = redrawScale * 0.5;
   drawFinished = false;
   loop();
-  
+
   setup();
 }
