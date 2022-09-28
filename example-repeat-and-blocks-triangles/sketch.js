@@ -42,8 +42,6 @@ let lineColorNoiseMap;
 async function setup() {
   SetupFeatures();
 
-  console.log("P5 SETUP!!");
-
   noiseSeed(int(fxrand() * 10000));
   drawFinished = false;
   splitMinWidth = 40 * scaler;
@@ -52,7 +50,7 @@ async function setup() {
   // setup canvas
   createCanvas(windowWidth, windowHeight);
 
-  longSide = 4000 * scaler;
+  longSide = 4000 * scaler * deviceScaler;
 
   if (isLandscape) {
     canvasWidth = longSide;

@@ -58,14 +58,38 @@
 
 <body>
   <script>
-    let NYsearch = new URLSearchParams(window.location.search)
+    let NYsearch = new URLSearchParams(window.location.search);
+    let deviceScaler = 1.0; // use to prevent mobile crashing
+
+    function isMobile()
+    {
+      const toMatch = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i
+      ];
+
+      return toMatch.some((toMatchItem) => {
+        return navigator.userAgent.match(toMatchItem);
+      });
+    }
 
     function SetupFeatures() {
       let features = {};
       console.log(fxhash);
 
+      if(isMobile())
+      {
+        deviceScaler = 0.6;
+        console.log("mobile detected, reduce resolution");
+      }
+
       if (NYsearch.get('scale') != null)
-        scaler = parseFloat(search.get('scale')) * 0.5;
+        scaler = parseFloat(NYsearch.get('scale')) * 0.5;
 
       if (NYsearch.get('no_texture') == true)
         SETTING_NO_TEXTURE = true;
