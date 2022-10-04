@@ -22,10 +22,10 @@ async function setup() {
   baseHue = random(0, 360);
 
   const randomDrawMethods = [];
-  // randomDrawMethods.push(randomArc);
+  randomDrawMethods.push(randomArc);
   // randomDrawMethods[1] = () => { randomLines(random(1, 4)) };
   // randomDrawMethods.push(randomRect);
-  randomDrawMethods.push(randomCircle);
+  // randomDrawMethods.push(randomCircle);
   // randomDrawMethods.push(randomTriangles);
 
   // random arc
@@ -501,8 +501,8 @@ function NYNoiseBGLines(fromColor, toColor) {
 async function NYPaperTexture() {
   let paperNoiseX = random(-1000.0, 1000.0);
   let paperNoiseY = random(-1000.0, 1000.0);
-  let paperXScale = 1;
-  let paperYScale = 2;
+  let paperXScale = 0.012;
+  let paperYScale = 1.23;
 
   let counter = 100;
 
@@ -517,7 +517,7 @@ async function NYPaperTexture() {
       blendMode(ADD);
 
       colorMode(RGB);
-      fill(colorValue, 30);
+      fill(colorValue, 10);
       noStroke();
 
       rect(x, y, 1, 1);
@@ -558,6 +558,45 @@ function NYLerpColor(fromColor, toColor, t) {
 
     return color(newHue, newSat, newBright);
   }
+}
+
+
+function keyPressed(e) {
+  let key = e.key;
+
+  if (key == 's' || key == 'S') {
+    let fileName = 'random and shapes-' + fxhash + '.png';
+    save(fileName);
+  }
+  // else {
+  //   if (drawFinished) {
+  //     if (key == '1') {
+  //       doRedraw(1);
+  //     }
+  //     else if (key == '2') {
+  //       doRedraw(2);
+  //     }
+  //     else if (key == '3') {
+  //       doRedraw(3);
+  //     }
+  //     else if (key == '4') {
+  //       doRedraw(4);
+  //     }
+  //     else if (key == '5') {
+  //       doRedraw(5);
+  //     }
+  //     else if (key == '6') {
+  //       doRedraw(6);
+  //     }
+  //     else if (key == 't' || key == 'T') {
+  //       SETTING_NO_TEXTURE = !SETTING_NO_TEXTURE;
+  //       doRedraw(scaler * 2);
+  //     }
+  //   }
+  //   else {
+  //     console.log("Please wait till draw finish to re-draw");
+  //   }
+  // }
 }
 
 function sleep(ms) {
