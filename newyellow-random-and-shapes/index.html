@@ -14,9 +14,19 @@
       background-color: #333;
     }
 
+    main {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+      background-color: #333;
+    }
+
     canvas {
       display: block;
-      margin: 0;
+      /* margin: auto auto; */
 
       padding: 0;
       border: 0;
@@ -57,6 +67,100 @@
 </head>
 
 <body>
+  <script>
+    let NYsearch = new URLSearchParams(window.location.search);
+    let deviceScaler = 1.0; // use to prevent mobile crashing
+
+    function isMobile()
+    {
+      const toMatch = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i
+      ];
+
+      return toMatch.some((toMatchItem) => {
+        return navigator.userAgent.match(toMatchItem);
+      });
+    }
+
+    function SetupFeatures() {
+      let features = {};
+      console.log(fxhash);
+
+      if(isMobile())
+      {
+        deviceScaler = 0.6;
+        console.log("mobile detected, reduce resolution");
+      }
+
+      if (NYsearch.get('scale') != null)
+        scaler = parseFloat(NYsearch.get('scale')) * 0.5;
+
+      if (NYsearch.get('no_texture') == true)
+        SETTING_NO_TEXTURE = true;
+
+      // shape type
+
+      // shape amount
+      let shapeAmountLevel = int(fxRandomRange(0, 3));
+      shapeAmountLevel = 1;
+      if(shapeAmountLevel == 0)
+      {
+        preFrameShapeCount = 30;
+        postFrameShapeCount = 30;
+        features["Shape Amount"] = 'Sparsey';
+      }
+      else if(shapeAmountLevel == 1)
+      {
+        preFrameShapeCount = 80;
+        postFrameShapeCount = 40;
+        features["Shape Amount"] = 'Medium';
+      }
+      else if(shapeAmountLevel == 2)
+      {
+        preFrameShapeCount = 200;
+        postFrameShapeCount = 40;
+        features["Shape Amount"] = 'Densy';
+      }
+
+
+      // main color hue
+      
+      // color tone
+      let specialColorType = int(fxRandomRange(0, 3));
+      specialColorType = 2;
+      if(specialColorType == 0)
+      {
+        specialColorAddValue = 0;
+        features["Color Tone"] = 'Single';
+      }
+      else if(specialColorType == 1)
+      {
+        specialColorAddValue = 60;
+        features["Color Tone"] = 'Friendly';
+      }
+      else if(specialColorType == 2)
+      {
+        specialColorAddValue = 180;
+        features["Color Tone"] = 'Oppsite';
+      }
+
+      // paper color
+
+      console.log(features);
+      window.$fxhashFeatures = features;
+    }
+
+    function fxRandomRange(fromValue = 0.0, toValue = 1.0)
+    {
+      return fromValue + (toValue - fromValue) * fxrand();
+    }
+  </script>
   <script src="sketch.js"></script>
 </body>
 
