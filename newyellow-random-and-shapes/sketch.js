@@ -1,12 +1,22 @@
 // feature values
+let isDarkPaper = false;
+
 let preFrameShapeCount = 30;
 let postFrameShapeCount = 30;
+
+let rotationStyle = 0;
+let rotationAddValue = 0;
 
 let baseHue = 0.0;
 let randomHueRange = 0.0;
 let specialColorAddValue = 60;
+let isMonoColor = false;
+
+let shapeType = 0;
+let SETTING_NO_TEXTURE = false;
 // feature values
 
+let minRecursiveLength = 20;
 
 
 let bgNoiseX = 0.0;
@@ -14,17 +24,22 @@ let bgNoiseY = 0.0;
 let bgNoiseScale = 0.0;
 
 let scale = 1.0;
+let scaler = 1.0;
+let deviceScale = 1.0;
 let baseLongSide = 2000;
 
 let _draw;
 let drawWidth;
 let drawHeight;
 
+// for finish
+let isDrawFinished = false;
+
 async function setup() {
   SetupFeatures();
 
-  scale = 1;
-  baseLongSide *= scale;
+  scale = scaler * deviceScale;
+  baseLongSide = 2000 * scale;
 
   drawWidth = baseLongSide * 0.618;
   drawHeight = baseLongSide;
@@ -37,16 +52,34 @@ async function setup() {
     canvasHeight = canvasWidth / 0.618;
   }
 
+  minRecursiveLength = 10 * scale;
+  console.log(`scale ${scale}`);
+
   _draw = createGraphics(drawWidth, drawHeight);
 
   createCanvas(canvasWidth, canvasHeight);
-  _draw.background(30);
+  console.log(`image size: ${drawWidth} x ${drawHeight}`);
+
+  if (isDarkPaper)
+    _draw.background(30);
+  else
+    _draw.background(235);
+
   _draw.smooth();
 
   // setting up values
   baseHue = fxRandomRange(0, 360);
   randomHueRange = 30;
   console.log(`baseHue: ${baseHue}  hueRange: ${randomHueRange}`);
+
+  let rotationAddRandom = fxRandomRange();
+  if (rotationAddRandom < 0.2)
+    rotationAddValue = 0;
+  else if (rotationAddRandom < 0.6)
+    rotationAddValue = -30.0;
+  else
+    rotationAddValue = 30.0;
+  console.log(`rotation add value: ${rotationAddValue}`);
 
   bgNoiseX = fxRandomRange(-1000.0, 1000.0);
   bgNoiseY = fxRandomRange(-1000.0, 1000.0);
@@ -55,37 +88,32 @@ async function setup() {
   baseHue = fxRandomRange(0, 360);
 
   const randomDrawMethods = [];
-  // randomDrawMethods.push(randomArc);
-  // randomDrawMethods.push(randomRect);
-  randomDrawMethods.push(randomCircle);
-  randomDrawMethods.push(randomThinArc);
-  // randomDrawMethods.push(randomTriangles);
 
+  if (shapeType == 0) {
+    randomDrawMethods.push(randomRect);
+  }
+  else if (shapeType == 1) {
+    randomDrawMethods.push(randomCircle);
+    randomDrawMethods.push(randomThinArc);
+  }
+  else if (shapeType == 2) {
 
+    randomDrawMethods.push(randomTriangles);
+  }
+  else if (shapeType == 3) {
 
+    randomDrawMethods.push(randomThickArc);
+  }
+  else if (shapeType == 4) {
 
-  // let hue1 = 0;
-  // let hue2 = 340;
+    randomDrawMethods.push(randomThickArc);
+    randomDrawMethods.push(randomRect);
+    randomDrawMethods.push(randomCircle);
+    randomDrawMethods.push(randomThinArc);
+    randomDrawMethods.push(randomTriangles);
+  }
 
-  // colorMode(HSB);
-  // let color1 = color(hue1, 80, 80);
-  // let color2 = color(hue2, 80, 80);
-  // _draw.colorMode(HSB);
-
-  // for (let i = 0; i < drawWidth; i++) {
-
-  //   let ratio = float(i) / drawWidth;
-  //   let _color = NYLerpColor(color1, color2, ratio);
-
-  //   _draw.colorMode(HSB);
-  //   _draw.noStroke();
-  //   _draw.fill(_color);
-  //   _draw.rect(i, 0, 1, 20);
-
-  // }
-
-
-  // random arc
+  // random shapes
   for (let i = 0; i < preFrameShapeCount; i++) {
     let methodIndex = floor(fxRandomRange(0, randomDrawMethods.length));
     randomDrawMethods[methodIndex]();
@@ -94,9 +122,12 @@ async function setup() {
   }
 
   // frame
-  drawFrame(0, 30 * scale, 20);
+  if (isDarkPaper)
+    drawFrame(0, 30 * scale, 20);
+  else
+    drawFrame(0, 30 * scale, 245);
 
-  // random arcs
+  // random shapes
   for (let i = 0; i < postFrameShapeCount; i++) {
     let methodIndex = floor(fxRandomRange(0, randomDrawMethods.length));
     randomDrawMethods[methodIndex]();
@@ -104,8 +135,16 @@ async function setup() {
     await sleep(10);
   }
 
-  //await noiseBackground();
-  await NYPaperTexture();
+  if (!SETTING_NO_TEXTURE)
+    await NYPaperTexture();
+
+  isDrawFinished = true;
+  console.log("Draw Finished!");
+
+  if(isFxpreview)
+  {
+    fxpreview();
+  }
 }
 
 function drawFrame(_padding, _width, _colorGrayValue) {
@@ -132,18 +171,25 @@ function drawFrame(_padding, _width, _colorGrayValue) {
   _draw.rect(drawWidth - padding - xFrameWidth, padding, xFrameWidth, drawHeight - padding * 2);
 }
 
-function randomArc() {
-  let posX = fxRandomRange(0.1, 0.9) * drawWidth;
-  let posY = fxRandomRange(0.1, 0.9) * drawHeight;
+function randomThickArc() {
+  let posX = fxRandomRange(-0.15, 1) * drawWidth;
+  let posY = fxRandomRange(-0.15, 1.15) * drawHeight;
 
-  let arcSize = fxRandomRange(0.01, 1.2) * drawWidth;
+  let arcSize = fxRandomRange(0.01, 1.1) * drawWidth;
   let arcColorThickness = fxRandomRange(0.02, 0.4) * arcSize;
 
-  let angleRange = 30;
-  let rotateAngle = -45;
+  let angleRange = fxRandomRange(30, 60);
+  let rotateAngle = 0.0;
+
+  if (rotationStyle == 0)
+    rotateAngle = fxRandomRange(0, 360);
+  else if (rotationStyle == 1)
+    rotateAngle = floor(fxRandomRange(0, 4)) * 90 + rotationAddValue;
+  else {
+    rotateAngle = rotationAddValue;
+  }
 
   NYArc(posX, posY, angleRange, rotateAngle, arcSize, arcColorThickness);
-  NYArc(posX, posY, angleRange, rotateAngle + 180, arcSize, arcColorThickness);
 }
 
 function randomThinArc() {
@@ -151,24 +197,31 @@ function randomThinArc() {
   let posY = fxRandomRange() * drawHeight;
 
   let arcSize = fxRandomRange(0.01, 0.6) * drawWidth;
-  let arcColorThickness = fxRandomRange(0.02, 0.4) * arcSize;
+  let arcColorThickness = fxRandomRange(0.02, 0.2) * arcSize;
 
-  let angleRange = fxRandomRange(60, 200);
-  let rotateAngle = fxRandomRange(0, 360);
+  let angleRange = fxRandomRange(60, 180);
+  let rotateAngle = 0.0;
+
+  if (rotationStyle == 0)
+    rotateAngle = fxRandomRange(0, 360);
+  else if (rotationStyle == 1)
+    rotateAngle = floor(fxRandomRange(0, 6)) * 90 + rotationAddValue;
+  else {
+    rotateAngle = rotationAddValue;
+  }
 
   NYArc(posX, posY, angleRange, rotateAngle, arcSize, arcColorThickness);
-  NYArc(posX, posY, angleRange, rotateAngle + 180, arcSize, arcColorThickness);
 }
 
-function NYArc(x, y, angleRange, rotateAngle, drawWidth, thickness) {
+function NYArc(x, y, angleRange, rotateAngle, arcWidth, thickness) {
 
   let isSplit = fxRandomRange() < 0.7;
-  if (isSplit && drawWidth > 10) {
-    let padding = fxRandomRange(0.05, 0.4) * drawWidth;
-    let newDrawWidth = drawWidth - thickness - padding;
-    let newThickness = fxRandomRange(0.1, 0.8) * newDrawWidth;
+  if (isSplit && arcWidth > minRecursiveLength) {
+    let padding = fxRandomRange(0.05, 0.4) * arcWidth;
+    let newArcWidth = arcWidth - thickness - padding;
+    let newThickness = fxRandomRange(0.1, 0.8) * newArcWidth;
 
-    NYArc(x, y, angleRange, rotateAngle, newDrawWidth, newThickness);
+    NYArc(x, y, angleRange, rotateAngle, newArcWidth, newThickness);
   }
   let fromAngle = - 0.5 * angleRange;
   let toAngle = 0.5 * angleRange;
@@ -181,47 +234,39 @@ function NYArc(x, y, angleRange, rotateAngle, drawWidth, thickness) {
   let fromColor = NYRandomColor(inverted);
   let toColor = NYRandomColor(inverted);
 
-  let randomAddAmount = int(fxRandomRange(4, 12));
-  let colorIndexAddAmount = 1;
+  let spaceAdder = 1;
 
-  if (fxRandomRange() < 0.7)
-    colorIndexAddAmount = randomAddAmount;
+  if (fxRandomRange(0.0, 1.0) < 0.6)
+    spaceAdder = 12;
+
+  spaceAdder *= scale;
 
   _draw.push();
 
   _draw.translate(x, y);
   _draw.rotate(radians(rotateAngle));
 
-  // draw stroke
-  // stroke(0);
-  // strokeWeight(1);
-  // noFill();
-  // let strokeDrawWidth = drawWidth;
-  // for (let i = 0; i < strokeThickness; i += strokeIndexAddAmount) {
-  //   arc(0, 0, strokeDrawWidth - i, strokeDrawWidth - i, arcFrom, arcTo, OPEN);
-  // }
-
   // random black white
   let colorRandomValue = fxRandomRange();
-  if (colorRandomValue < 0.1) {
+  if (colorRandomValue < 0.08) {
     fromColor = color(0, 0, fxRandomRange(0, 30));
     toColor = color(0, 0, fxRandomRange(0, 30));
   }
-  else if (colorRandomValue < 0.25) {
-    fromColor = color(0, 0, fxRandomRange(0, 30));
-    toColor = color(0, 0, fxRandomRange(0, 30));
+  else if (colorRandomValue < 0.16) {
+    fromColor = color(0, 0, fxRandomRange(80, 100));
+    toColor = color(0, 0, fxRandomRange(80, 100));
   }
 
   // color thickness
   _draw.noFill();
-  _draw.strokeWeight(1);
-  for (let i = 0; i < thickness; i += colorIndexAddAmount) {
+  _draw.strokeWeight(2 * scale);
+  for (let i = 0; i < thickness; i += spaceAdder) {
 
     let ratio = float(i) / thickness;
     let nowColor = NYLerpColor(fromColor, toColor, ratio);
 
     _draw.stroke(nowColor);
-    _draw.arc(0, 0, drawWidth - i, drawWidth - i, arcFrom, arcTo, OPEN);
+    _draw.arc(0, 0, arcWidth - i, arcWidth - i, arcFrom, arcTo, OPEN);
   }
 
   _draw.pop();
@@ -244,8 +289,15 @@ function randomRect() {
   else
     size = fxRandomRange(0.01, 0.06) * drawWidth;
 
-  let thickness = fxRandomRange(1, size * 0.4);
-  let rotateAngle = 45;
+  let thickness = fxRandomRange(1 * scale, size * 0.4);
+  let rotateAngle = 0;
+
+  if (rotationStyle == 0)
+    rotateAngle = fxRandomRange(0, 360);
+  else if (rotationStyle == 1)
+    rotateAngle = floor(fxRandomRange(0, 8)) * 45 + rotationAddValue;
+  else
+    rotateAngle = rotationAddValue;
 
   NYRect(posX, posY, size * ratioX, size * ratioY, thickness, rotateAngle);
 }
@@ -254,7 +306,7 @@ function NYRect(x, y, rectWidth, rectHeight, thickness, rotation) {
 
   let isSplit = fxRandomRange() < 0.7;
 
-  if (isSplit && min(rectWidth, rectHeight) > 10) {
+  if (isSplit && min(rectWidth, rectHeight) > minRecursiveLength) {
     let newSize = fxRandomRange(0.4, 0.9) * rectWidth;
     let newThickness = fxRandomRange(0.8, 1.2) * thickness;
 
@@ -266,13 +318,13 @@ function NYRect(x, y, rectWidth, rectHeight, thickness, rotation) {
   let toColor = NYRandomColor(inverted);
 
   // random black white
-  if (fxRandomRange(0.0, 1.0) > 0.9) {
+  if (fxRandomRange(0.0, 1.0) > 0.92) {
     fromColor = color(0, 0, fxRandomRange(0, 30));
     toColor = color(0, 0, fxRandomRange(0, 30));
   }
-  else if (fxRandomRange(0.0, 1.0) > 0.75) {
-    fromColor = color(0, 0, fxRandomRange(90, 100));
-    toColor = color(0, 0, fxRandomRange(90, 100));
+  else if (fxRandomRange(0.0, 1.0) > 0.84) {
+    fromColor = color(0, 0, fxRandomRange(80, 100));
+    toColor = color(0, 0, fxRandomRange(80, 100));
   }
 
   let spaceAdder = 1;
@@ -280,7 +332,8 @@ function NYRect(x, y, rectWidth, rectHeight, thickness, rotation) {
   if (fxRandomRange(0.0, 1.0) < 0.6)
     spaceAdder = 12;
 
-  _draw.strokeWeight(2);
+  spaceAdder *= scale;
+  _draw.strokeWeight(2 * scale);
   _draw.noFill();
 
   _draw.rectMode(CENTER);
@@ -288,7 +341,7 @@ function NYRect(x, y, rectWidth, rectHeight, thickness, rotation) {
     _draw.push();
 
     _draw.translate(x, y);
-    _draw.rotate(rotation);
+    _draw.rotate(radians(rotation));
     let ratio = float(i) / thickness;
     _draw.stroke(NYLerpColor(fromColor, toColor, ratio));
     _draw.rect(0, 0, rectWidth - i, rectHeight - i);
@@ -299,10 +352,9 @@ function NYRect(x, y, rectWidth, rectHeight, thickness, rotation) {
 }
 
 function randomTriangles() {
-  let isUp = fxRandomRange() >= 0.5;
 
-  let posX = fxRandomRange(0.1, 0.9) * drawWidth;
-  let posY = fxRandomRange(0.1, 0.9) * drawHeight;
+  let posX = fxRandomRange() * drawWidth;
+  let posY = fxRandomRange() * drawHeight;
 
   let size = fxRandomRange(0.4, 0.6) * drawWidth;
   let upRatio = 1;
@@ -316,17 +368,18 @@ function randomTriangles() {
   else
     size = fxRandomRange(0.01, 0.1) * drawWidth;
 
-  let thickness = fxRandomRange(1, size * 0.4);
-  let rotateAngle = -20 + int(fxRandomRange(0, 3)) * 180;
+  let thickness = fxRandomRange(1 * scale, size * 0.4);
 
-  if (isUp) {
-    posY = fxRandomRange(0.1, 0.6) * drawHeight;
-    rotateAngle = 0;
-  }
-  else {
-    posY = fxRandomRange(0.6, 0.9) * drawHeight;
-    rotateAngle = 180;
-  }
+  let rotateAngle = 0;
+  if (rotationStyle == 0)
+    rotateAngle = fxRandomRange(0, 360);
+  else if (rotationStyle == 1)
+    rotateAngle = floor(fxRandomRange(0, 8)) * 90 + rotationAddValue;
+  else
+    rotateAngle = rotationAddValue;
+
+  if (fxRandomRange() > 0.5)
+    rotateAngle += 180.0;
 
   NYTriangle(posX, posY, size, upRatio, thickness, rotateAngle);
 }
@@ -334,7 +387,7 @@ function randomTriangles() {
 function NYTriangle(x, y, edgeLength, upRatio, thickness, rotateAngle) {
   let split = fxRandomRange(0.0, 1.0) < 0.7;
 
-  if (split && edgeLength > 10) {
+  if (split && edgeLength > minRecursiveLength) {
     let padding = fxRandomRange(0.0, 0.1) * edgeLength;
     let innerTriangleEdgeLength = edgeLength - padding - thickness;
 
@@ -348,13 +401,13 @@ function NYTriangle(x, y, edgeLength, upRatio, thickness, rotateAngle) {
   let fromColor = NYRandomColor(inverted);
   let toColor = NYRandomColor(inverted);
 
-  if (fxRandomRange(0.0, 1.0) > 0.9) {
+  if (fxRandomRange(0.0, 1.0) > 0.92) {
     fromColor = color(0, 0, fxRandomRange(0, 30));
     toColor = color(0, 0, fxRandomRange(0, 30));
   }
-  else if (fxRandomRange(0.0, 1.0) > 0.75) {
-    fromColor = color(0, 0, fxRandomRange(90, 100));
-    toColor = color(0, 0, fxRandomRange(90, 100));
+  else if (fxRandomRange(0.0, 1.0) > 0.84) {
+    fromColor = color(0, 0, fxRandomRange(80, 100));
+    toColor = color(0, 0, fxRandomRange(80, 100));
   }
 
   let spaceAdder = 1;
@@ -362,7 +415,8 @@ function NYTriangle(x, y, edgeLength, upRatio, thickness, rotateAngle) {
   if (fxRandomRange(0.0, 1.0) < 0.6)
     spaceAdder = 12;
 
-  _draw.strokeWeight(2);
+  spaceAdder *= scale;
+  _draw.strokeWeight(2 * scale);
   _draw.noFill();
 
   for (let i = 0; i < thickness; i += spaceAdder) {
@@ -399,33 +453,34 @@ function randomCircle() {
   else
     size = fxRandomRange(0.01, 0.06) * drawWidth;
 
-  let thickness = fxRandomRange(1, size * 0.7);
+  let thickness = fxRandomRange(1 * scale, size * 0.7);
 
   NYCircle(posX, posY, size, thickness);
 }
 
-function NYCircle(x, y, drawWidth, thickness) {
+function NYCircle(x, y, circleWidth, thickness) {
 
-  let split = fxRandomRange(0.0, 1.0) > 0.3;
+  let split = fxRandomRange() > 0.3;
 
-  if (split && drawWidth > 10) {
-    let padding = fxRandomRange(0.0, 0.1) * drawWidth;
-    let innerCircleWidth = drawWidth - padding - thickness;
+  if (split && circleWidth > minRecursiveLength) {
+    let padding = fxRandomRange(0.0, 0.2) * circleWidth;
+    let innerCircleWidth = circleWidth - padding - thickness;
+    let innerThickness = innerCircleWidth * fxRandomRange(0.05, 0.3);
 
-    NYCircle(x, y, innerCircleWidth, fxRandomRange(1, min(100, innerCircleWidth)));
+    NYCircle(x, y, innerCircleWidth, innerThickness);
   }
 
   let inverted = fxRandomRange() < 0.2;
   let fromColor = NYRandomColor(inverted);
   let toColor = NYRandomColor(inverted);
 
-  if (fxRandomRange(0.0, 1.0) > 0.9) {
+  if (fxRandomRange(0.0, 1.0) > 0.92) {
     fromColor = color(0, 0, fxRandomRange(0, 30));
     toColor = color(0, 0, fxRandomRange(0, 30));
   }
-  else if (fxRandomRange(0.0, 1.0) > 0.75) {
-    fromColor = color(0, 0, fxRandomRange(90, 100));
-    toColor = color(0, 0, fxRandomRange(90, 100));
+  else if (fxRandomRange(0.0, 1.0) > 0.84) {
+    fromColor = color(0, 0, fxRandomRange(80, 100));
+    toColor = color(0, 0, fxRandomRange(80, 100));
   }
 
   let spaceAdder = 1;
@@ -433,97 +488,14 @@ function NYCircle(x, y, drawWidth, thickness) {
   if (fxRandomRange(0.0, 1.0) < 0.6)
     spaceAdder = 12;
 
-  _draw.strokeWeight(2);
+  spaceAdder *= scale;
+  _draw.strokeWeight(2 * scale);
   _draw.noFill();
 
   for (let i = 0; i < thickness; i += spaceAdder) {
     let ratio = float(i) / thickness;
     _draw.stroke(NYLerpColor(fromColor, toColor, ratio));
-    _draw.circle(x, y, drawWidth - i);
-  }
-}
-
-function randomLines(pointNum) {
-  let startPointX = fxRandomRange(drawWidth * 0.1, drawWidth * 0.9);
-  let startPointY = fxRandomRange(drawHeight * 0.1, drawHeight * 0.9);
-
-  let points = [];
-  points[0] = new NYPoint(startPointX, startPointY);
-
-  // push point data
-  for (let i = 0; i < pointNum; i++) {
-    let newPoint = new NYPoint();
-    newPoint.randomFromPoint(points[i], drawWidth * fxRandomRange(0.1, 0.6));
-    points.push(newPoint);
-  }
-
-  stroke(0);
-  // strokeWeight(random(1, 0));
-  strokeWeight(10);
-  strokeCap(SQUARE);
-  noFill();
-
-  let spaceAdder = 1;
-  if (fxRandomRange(0.0, 1.0) > 0.5)
-    spaceAdder = 6;
-
-  // random draw line
-  vertex(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i += spaceAdder) {
-    let fromPoint = points[0];
-    let toPoint = points[i];
-
-    line(fromPoint.x, fromPoint.y, toPoint.x, toPoint.y);
-  }
-
-}
-
-class NYPoint {
-  constructor(x = 0, y = 0) {
-    this.x = x;
-    this.y = y;
-  }
-
-  randomFromPoint(point, range) {
-    this.x = point.x + fxRandomRange(-0.5 * range, 0.5 * range);
-    this.y = point.y + fxRandomRange(-0.5 * range, 0.5 * range);
-  }
-}
-
-async function noiseBackground() {
-  colorMode(HSB);
-
-  let bgHue = baseHue + fxRandomRange(-randomHueRange, randomHueRange);
-
-  let fromColor = color(10, 60, 90);
-  bgHue += fxRandomRange(20, 40);
-
-  if (bgHue < 0)
-    bgHue += 360.0;
-  else if (bgHue > 360.0)
-    bgHue -= 360.0;
-
-  let toColor = color(120, 60, 90);
-
-  strokeWeight(1);
-
-  // NYNoiseBGLines(fromColor, toColor);
-  // await sleep(50);
-
-}
-
-function NYNoiseBGLines(fromColor, toColor) {
-  for (let x = 0; x < drawWidth; x++) {
-    for (let y = 0; y < drawHeight; y++) {
-      let nx = bgNoiseX + bgNoiseScale * x;
-      let ny = bgNoiseY + bgNoiseScale * y;
-
-      let noiseValue = noise(nx, ny);
-      let newColor = NYLerpColor(fromColor, toColor, noiseValue);
-
-      _draw.stroke(newColor);
-      point(x, y);
-    }
+    _draw.circle(x, y, circleWidth - i);
   }
 }
 
@@ -560,6 +532,9 @@ async function NYPaperTexture() {
 
 function draw() {
   image(_draw, 0, 0, width, height);
+
+  if (isDrawFinished)
+    noLoop();
 }
 
 
@@ -577,7 +552,21 @@ function NYRandomColor(isSpecial) {
   else if (newHue < 0.0)
     newHue += 360.0;
 
-  let newColor = color(newHue, fxRandomRange(40, 80), fxRandomRange(60, 90));
+  let newSat = fxRandomRange(40, 80);
+  let newBright = fxRandomRange(60, 90);
+
+  // // light color
+  if (isDarkPaper == false) {
+    newSat = fxRandomRange(20, 60);
+    newBright = fxRandomRange(60, 100);
+  }
+
+  if (isMonoColor) {
+    newSat = 0;
+    newBright = fxRandomRange(10, 90);
+  }
+
+  let newColor = color(newHue, newSat, newBright);
 
   return newColor;
 }
@@ -604,9 +593,9 @@ function NYLerpColor(fromColor, toColor, t) {
 
   let newHue = lerp(fromHue, toHue, t);
 
-  if(newHue > 360)
+  if (newHue > 360)
     newHue -= 360;
-  else if(newHue < 0)
+  else if (newHue < 0)
     newHue += 360;
 
   return color(newHue, newSat, newBright);
@@ -619,37 +608,49 @@ function keyPressed(e) {
 
   if (key == 's' || key == 'S') {
     let fileName = 'random and shapes-' + fxhash + '.png';
-    save(fileName);
+    save(_draw, fileName);
   }
-  // else {
-  //   if (drawFinished) {
-  //     if (key == '1') {
-  //       doRedraw(1);
-  //     }
-  //     else if (key == '2') {
-  //       doRedraw(2);
-  //     }
-  //     else if (key == '3') {
-  //       doRedraw(3);
-  //     }
-  //     else if (key == '4') {
-  //       doRedraw(4);
-  //     }
-  //     else if (key == '5') {
-  //       doRedraw(5);
-  //     }
-  //     else if (key == '6') {
-  //       doRedraw(6);
-  //     }
-  //     else if (key == 't' || key == 'T') {
-  //       SETTING_NO_TEXTURE = !SETTING_NO_TEXTURE;
-  //       doRedraw(scaler * 2);
-  //     }
-  //   }
-  //   else {
-  //     console.log("Please wait till draw finish to re-draw");
-  //   }
-  // }
+  else {
+    if (isDrawFinished) {
+      if (key == '1') {
+        doRedraw(1);
+      }
+      else if (key == '2') {
+        doRedraw(2);
+      }
+      else if (key == '3') {
+        doRedraw(3);
+      }
+      else if (key == '4') {
+        doRedraw(4);
+      }
+      else if (key == '5') {
+        doRedraw(5);
+      }
+      else if (key == '6') {
+        doRedraw(6);
+      }
+      else if(key == 't' || key == 'T')
+      {
+        SETTING_NO_TEXTURE = !SETTING_NO_TEXTURE;
+        doRedraw(scale*2);
+      }
+    }
+    else {
+      console.log("Please wait till draw finish to re-draw");
+    }
+  }
+}
+
+function doRedraw(redrawScale) {
+  fxrand = sfc32(...hashes);
+
+  scaler = redrawScale * 0.5;
+  isDrawFinished = false;
+  loop();
+
+  setup();
+  draw();
 }
 
 function sleep(ms) {

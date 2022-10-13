@@ -63,13 +63,12 @@
     }
     //---- /do not edit the following code
   </script>
-  <script src="libraries/p5.min.js"></script>
+  <script src="p5.min.js"></script>
 </head>
 
 <body>
   <script>
     let NYsearch = new URLSearchParams(window.location.search);
-    let deviceScaler = 1.0; // use to prevent mobile crashing
 
     function isMobile()
     {
@@ -94,7 +93,7 @@
 
       if(isMobile())
       {
-        deviceScaler = 0.6;
+        deviceScale = 0.6; // prevent mobile crashing
         console.log("mobile detected, reduce resolution");
       }
 
@@ -104,11 +103,44 @@
       if (NYsearch.get('no_texture') == true)
         SETTING_NO_TEXTURE = true;
 
+      // paper color
+      isDarkPaper = fxRandomRange() < 0.9;
+      if(isDarkPaper)
+      {
+        features["Paper Color"] = 'Dark';
+      }
+      else
+      {
+        features["Paper Color"] = 'Light';
+      }
+
       // shape type
+      shapeType = floor(fxRandomRange(0, 4));
+      
+      if(fxRandomRange() < 0.12)
+        shapeType = 4;
+
+      if(shapeType == 0)
+        features["Shape"] = 'Rects';
+      else if(shapeType == 1)
+        features["Shape"] = 'Circles and Arcs';
+      else if(shapeType == 2)
+        features["Shape"] = 'Triangles';
+      else if(shapeType == 3)
+        features["Shape"] = 'Pizza';
+      else if(shapeType == 4)
+        features["Shape"] = 'Chaos';
 
       // shape amount
-      let shapeAmountLevel = int(fxRandomRange(0, 3));
-      shapeAmountLevel = 1;
+      let shapeAmountLevel = 0;
+      let shapeAmountRandom = fxRandomRange();
+      if(shapeAmountRandom < 0.15)
+        shapeAmountLevel = 0;
+      else if(shapeAmountRandom < 0.65)
+        shapeAmountLevel = 1;
+      else
+        shapeAmountLevel = 2;
+
       if(shapeAmountLevel == 0)
       {
         preFrameShapeCount = 30;
@@ -127,31 +159,55 @@
         postFrameShapeCount = 40;
         features["Shape Amount"] = 'Densy';
       }
-
-
-      // main color hue
       
       // color tone
-      let specialColorType = int(fxRandomRange(0, 3));
-      specialColorType = 2;
-      if(specialColorType == 0)
+      let specialColorType = 0;
+      let _specialColorRandom = fxRandomRange();
+      if(_specialColorRandom < 0.2) // 20%
       {
+        specialColorType = 0;
         specialColorAddValue = 0;
         features["Color Tone"] = 'Single';
       }
-      else if(specialColorType == 1)
+      else if(_specialColorRandom < 0.59 ) // 39%
       {
+        specialColorType = 1;
         specialColorAddValue = 60;
         features["Color Tone"] = 'Friendly';
       }
-      else if(specialColorType == 2)
+      else if(_specialColorRandom < 0.98 ) // 39%
       {
+        specialColorType = 2;
         specialColorAddValue = 180;
         features["Color Tone"] = 'Oppsite';
       }
+      else
+      {
+        specialColorType = 3;
+        specialColorAddValue = 0;
+        features["Color Tone"] = 'Mono';
+        isMonoColor = true;
+      }
 
-      // paper color
+      // rotation style
+      let rotationRandom = fxRandomRange();
 
+      if(rotationRandom < 0.20) // 20%
+      {
+        rotationStyle = 0;
+        features["Rotation Style"] = 'Chaos';
+      }
+      else if(rotationRandom < 0.65) // 50%
+      {
+        rotationStyle = 1;
+        features["Rotation Style"] = 'Ordered';
+      }
+      else
+      {
+        rotationStyle = 2;
+        features["Rotation Style"] = 'Fixed';
+      }
+      
       console.log(features);
       window.$fxhashFeatures = features;
     }
