@@ -2,10 +2,14 @@
 let overlayData = [];
 let hueShiftData = [];
 let patterns = [];
+let masks = [];
 
 function preload() {
   for (let i = 0; i < 10; i++)
     patterns[i] = loadImage(`patterns/patterns-${i}.jpg`);
+
+  for (let i = 0; i < 10; i++)
+    masks[i] = loadImage(`masks/mask-${i}.jpg`);
 }
 
 async function setup() {
@@ -18,43 +22,21 @@ async function setup() {
     hueShiftData[i] = 0;
   }
 
-  // random shapes
-  for (let i = 0; i < 20; i++) {
-    let xPos = random(0.3, 0.7) * width;
-    let yPos = random(0.3, 0.7) * height;
-
-    let rectW = random(300, 800);
-    let rectH = random(300, 800);
-
-    let rotation = int(random(0, 8)) * 45;
-
-    push();
-
-    translate(xPos, yPos);
-    rotate(radians(rotation));
+  // show masks one by one
+  for (let i = 0; i < 10; i++) {
 
     background(0);
-    if (random() < 0.2) {
-      noFill();
-      stroke(255);
-      strokeWeight(100);
-    }
-    else {
-      fill(255);
-      noStroke();
-    }
-    rect(0, 0, rectW, rectH);
+    image(masks[i], 0, 0);
 
     await sleep(100);
 
     readAndAddPixelData(i);
 
-    pop();
-
-    await sleep(1000);
+    await sleep(100);
   }
+
+  // debugShowPixelData();
   showPatternsCrossOver();
-  // debugShowShapeData();
 }
 
 function draw() {
@@ -62,14 +44,24 @@ function draw() {
 }
 
 function readAndAddPixelData(shapeIndex) {
+
+  let adderA = random(-10000, -9000);
+  let adderB = random(1000, 10000);
+  let adderC = random(1000000, 2000000);
+
   for (let x = 0; x < 1024; x++) {
     for (let y = 0; y < 1024; y++) {
       let index = x * 1024 + y;
 
       let c = get(x, y);
-      if (c[0] > 100) {
-        overlayData[index] += 1;
-        hueShiftData[index] = shapeIndex;
+      if (c[0] > 200) {
+        overlayData[index] += adderA;
+      }
+      else if (c[0] > 100) {
+        overlayData[index] += adderB;
+      }
+      else {
+        overlayData[index] += adderC;
       }
     }
   }
@@ -77,16 +69,17 @@ function readAndAddPixelData(shapeIndex) {
 
 function debugShowPixelData() {
   background(0);
-  colorMode(HSB);
+  colorMode(RGB);
   for (let x = 0; x < 1024; x++) {
     for (let y = 0; y < 1024; y++) {
       let index = x * 1024 + y;
 
-      let hue = overlayData[index] * 36;
-      let sat = 80;
-      let bright = 90;
+      randomSeed(overlayData[index]);
+      let r = random(0, 255);
+      let g = random(0, 255);
+      let b = random(0, 255);
 
-      stroke(hue, sat, bright);
+      stroke(r, g, b);
       point(x, y);
     }
   }
@@ -117,17 +110,16 @@ function showPatternsCrossOver() {
     for (let y = 0; y < 1024; y++) {
       let index = x * 1024 + y;
 
-      let imgIndex = overlayData[index] % 10;
+      randomSeed(overlayData[index]);
+
+      let imgIndex = int(random(0, 10));
       let c = patterns[imgIndex].get(x, y);
 
       let hsb = RGBToHSB(c[0], c[1], c[2]);
 
-      let _hue = hsb[0];
-      let _sat = hsb[1];
-      let _bri = hsb[2];
-
-
-      _hue = (_hue + hueShiftData[index] * 30) % 360;
+      let _hue = (hsb[0] + random(0, 360)) % 360;
+      let _sat = (hsb[1] + random(0, 30));
+      let _bri = (hsb[2] + random(0, 30));
 
       stroke(_hue, _sat, _bri);
       point(x, y);
