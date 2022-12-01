@@ -11,42 +11,67 @@ let wormsShader;
 let wormModel;
 let wormGeometry;
 
+// random values
+let baseHue = 0.0;
+
 function preload() {
   wormsShader = loadShader("wormsVert.vert", "wormsFrag.frag");
 }
 
 function setup() {
-  renderer = createCanvas(1600, 1600, WEBGL);
+  renderer = createCanvas(windowWidth, windowHeight, WEBGL);
   gl = renderer.GL;
 
   background(0);
+
+  baseHue = random(0, 360);
+
   // setAttributes('antialias', true);
-  wormModel = new NYModel("worms");
+  wormModel = new WormModel("testWorm");
 
-  let xCount = 100;
-  let yCount = 100;
+  // let xCount = int(random(3, 20));
+  // let yCount = int(random(3, 20));
 
-  let xSpace = width/xCount;
-  let ySpace = height/yCount;
+  let xCount = 2;
+  let yCount = 2;
 
-  for(let x=0; x< xCount; x++)
-  {
-    for(let y=0; y< yCount; y++)
-    {
-      let cX = -0.5 * width + (x + 0.5) * xSpace;
-      let cY = -0.5 * height + (y + 0.5) * ySpace;
+  // if (random() < 0.1)
+  //   xCount = 60;
 
-      let edgeCount = int(random(3, 12));
-      let noiseValue = noise(cX * 0.01, cY * 0.01);
-      let moveAmountX = sin(radians(noiseValue * 360)) * xSpace / 4;
-      let moveAmountY = cos(radians(noiseValue * 360)) * xSpace / 4;
-      let randomDir = [moveAmountX, moveAmountY];
+  // if (random() < 0.1)
+  //   yCount = 60;
 
-      wormModel.addRegularShape(cX, cY, xSpace/2, edgeCount);
-      for(let a=0; a< edgeCount * 3; a++)
-        wormModel.addCustomAttribute("aSeed", randomDir);
+  console.log(`worm grid: ${xCount} x ${yCount}`);
+
+  let xSpace = width / xCount;
+  let ySpace = height / yCount;
+  let wormSpace = min(xSpace, ySpace) * random(0.9, 1.1);
+
+  // recalculate space
+  // xCount = floor(width / wormSpace);
+  // yCount = floor(height / wormSpace);
+
+  // xSpace = width / xCount;
+  // ySpace = height / yCount;
+
+  let moveDir = random(0, 360);
+
+  for (let x = 0; x < xCount; x++) {
+    for (let y = 0; y < yCount; y++) {
+
+      let xPos = -width / 2 + (0.5 + x) * xSpace;
+      let yPos = -height / 2 + (0.5 + y) * ySpace;
+
+      wormModel.shapeEdgeCount = int(random(3, 12));
+      wormModel.nodeRadius = random(1, 3);
+      wormModel.walkDirAngle = noise(x * 0.06, y * 0.02) * 360;
+      wormModel.startOffset = noise(x * 0.1, y * 0.1, 300) * 100;
+
+      wormModel.addWormLine(xPos, yPos, wormSpace, int(random(6, 24)));
     }
   }
+
+  // console.log(wormModel.build(renderer));
 
   // let geometryCount = 30;
   // let randomWaveDir = [0, 30];
@@ -66,9 +91,12 @@ function setup() {
 
 
   wormGeometry = wormModel.build(renderer);
+  // console.log(wormGeometry);
 
   shader(wormsShader);
   model(wormGeometry);
+
+  wormsShader.setUniform('uMoveSpace', wormSpace);
 }
 
 function draw() {
@@ -85,12 +113,111 @@ function draw() {
 
 
 
+class WormModel {
+  constructor(_modelName) {
+    this.model = new NYModel(_modelName);
+    this.shapeEdgeCount = -1; // -1 = random
+    this.nodeRadius = 100;
+    this.walkDirAngle = 0;
+    this.startOffset = 0;
+    this.colorValues = [1, 1, 1];
+  }
+
+  addWormLine(_centerX, _centerY, _spaceW, _nodeCount) {
+    let tSpace = 1.0 / _nodeCount;
+    let startX = _centerX + sin(radians(this.walkDirAngle)) * _spaceW / 2;
+    let endX = _centerX + sin(radians(this.walkDirAngle + 180)) * _spaceW / 2;
+    let startY = _centerY + cos(radians(this.walkDirAngle)) * _spaceW / 2;
+    let endY = _centerY + cos(radians(this.walkDirAngle + 180)) * _spaceW / 2;
+
+    let waveX = sin(radians(this.walkDirAngle + 90));
+    let waveY = cos(radians(this.walkDirAngle + 90));
+
+    let nodeSize = _spaceW * random(0.02, 0.1);
+    let randomColor = getNYColor();
+    let rValue = red(randomColor);
+    let gValue = green(randomColor);
+    let bValue = blue(randomColor);
+
+    this.colorValues = [rValue / 255.0, gValue / 255.0, bValue / 255.0];
+    for (let i = 0; i < _nodeCount; i++) {
+      let t = (i + 0.5) * tSpace;
+      let nodeX = lerp(startX, endX, t);
+      let nodeY = lerp(startY, endY, t);
+
+      this.addWormNode(nodeX, nodeY, nodeSize, [waveX, waveY], this.startOffset + i * 10);
+    }
+  }
+
+  addWormNode(_centerX, _centerY, _radius, _waveDir, _walkOffset) {
+    let edgeCount = this.shapeEdgeCount;
+    if (this.shapeEdgeCount == -1)
+      edgeCount = int(random(3, 12));
+
+    this.model.addRegularShape(_centerX, _centerY, _radius, edgeCount);
 
 
+    // cuz there are 3 verts per triangle
+    let centerPosDatas = [];
+    let waveDirDatas = [];
+    let walkOffsetDatas = [];
+    let colorDatas = [];
+    for (let i = 0; i < edgeCount * 3; i++) {
+      centerPosDatas.push(_centerX);
+      centerPosDatas.push(_centerY);
+
+      waveDirDatas.push(_waveDir[0]);
+      waveDirDatas.push(_waveDir[1]);
+
+      walkOffsetDatas.push(_walkOffset);
+
+      colorDatas.push(this.colorValues[0]);
+      colorDatas.push(this.colorValues[1]);
+      colorDatas.push(this.colorValues[2]);
+    }
+
+    this.model.addCustomAttribute("aCenterPos", centerPosDatas);
+    this.model.addCustomAttribute("aWaveDir", waveDirDatas);
+    this.model.addCustomAttribute("aWalkOffset", walkOffsetDatas);
+    this.model.addCustomAttribute("aNodeColor", colorDatas);
+  }
+
+  build(_renderer) {
+    return this.model.build(_renderer);
+  }
+}
+
+function getNYColor() {
+  colorMode(HSB);
+
+  let hueValue = baseHue + random(-30, 30);
+  let satValue = random(40, 80);
+  let briValue = random(60, 100);
+
+  if (random() < 0.05) {
+    satValue = 0.0;
+    briValue = 100;
+  }
+
+  if (random() < 0.05) {
+    hueValue += random(160, 200);
+  }
+
+  if (hueValue > 360)
+    hueValue -= 360;
+  else if (hueValue < 0)
+    hueValue += 360;
+
+  return color(hueValue, satValue, briValue);
+}
 
 class NYModel {
+  static UV_CENTER = 0;
+  static UV_TOP_DOWN = 1;
+
   constructor(_modelName) {
     this.verts = [];
+    this.vertColors = [];
     this.triangles = [];
     this.uvs = [];
     this.vertIndex = 0;
@@ -99,9 +226,17 @@ class NYModel {
 
     this.customAttributeNames = [];
     this.customAttributeDatas = [];
+
+    this.uvMode = NYModel.UV_TOP_DOWN;
   }
 
   addRegularShape(_centerX, _centerY, _radius = 100, _edgeCount = 4, _initRotation = 0) {
+
+    let minX = _centerX - _radius;
+    let maxX = _centerX + _radius;
+    let minY = _centerY - _radius;
+    let maxY = _centerY + _radius;
+
     for (let i = 0; i < _edgeCount; i++) {
       let p1x = _centerX;
       let p1y = _centerY;
@@ -115,7 +250,22 @@ class NYModel {
       let p3x = _centerX + sin(radians(p3Angle)) * _radius;
       let p3y = _centerY + cos(radians(p3Angle)) * _radius;
 
-      this.addTriangle(p1x, p1y, p2x, p2y, p3x, p3y);
+      let uv1 = [0, 1];
+      let uv2 = [1, 0];
+      let uv3 = [1, 1];
+
+      if (this.uvMode == NYModel.UV_CENTER) {
+        uv1 = [0, 0];
+        uv2 = [i / _edgeCount, 1];
+        uv3 = [(i + 1) / _edgeCount, 1];
+      }
+      else if (this.uvMode == NYModel.UV_TOP_DOWN) {
+        uv1 = [0.5, 0.5];
+        uv2 = [inverseLerp(minX, maxX, p2x), inverseLerp(minY, maxY, p2y)];
+        uv3 = [inverseLerp(minX, maxX, p3x), inverseLerp(minY, maxY, p3y)];
+      }
+
+      this.addTriangle(p1x, p1y, p2x, p2y, p3x, p3y, uv1, uv2, uv3);
     }
   }
 
@@ -123,6 +273,10 @@ class NYModel {
     this.verts.push([_x1, _y1]);
     this.verts.push([_x2, _y2]);
     this.verts.push([_x3, _y3]);
+
+    this.vertColors.push([1.0, 1.0, 1.0, 1.0]);
+    this.vertColors.push([1.0, 1.0, 1.0, 1.0]);
+    this.vertColors.push([1.0, 1.0, 1.0, 1.0]);
 
     this.uvs.push(_uv1);
     this.uvs.push(_uv2);
@@ -161,6 +315,10 @@ class NYModel {
     md.uvs = [];
     for (let i = 0; i < this.uvs.length; i++)
       md.uvs.push(this.uvs[i]);
+
+    md.vertexColors = [];
+    for (let i = 0; i < this.vertColors.length; i++)
+      md.vertexColors.push(this.vertColors[i]);
 
     if (this.customAttributeNames.length > 0) {
       if (_renderer == null) {
@@ -201,4 +359,12 @@ class NYModel {
     }
     return md;
   }
+}
+
+function inverseLerp(from, to, value) {
+  let range = to - from;
+  if (range == 0)
+    return 0;
+  else
+    return (to - value) / range;
 }
