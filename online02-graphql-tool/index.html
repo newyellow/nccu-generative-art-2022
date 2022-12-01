@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Example - data fetching</title>
+
+  <script src="https://code.jquery.com/jquery-3.6.1.min.js"
+    integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      background-color: #DDD;
+      padding: 20px;
+    }
+
+    .input-area {
+      padding: 60px 30px;
+      line-height: 32px;
+
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 18px;
+
+      border: 1px #666;
+      border-radius: 20px;
+      background-color: #fff;
+
+      margin-bottom: 20px;
+    }
+
+    .input-area input {
+      width: 600px;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #999;
+
+      font-size: 18px;
+    }
+
+    .display-area {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="input-area">
+
+    <div>Please enter tezos address to check all the re-sales</div>
+
+    <div class="button-area">
+      <input id="inputAddress" type="text" value="" placeholder="ex: tz1RPZp6NLzn7x4g7jhqHtCkhCQVnhbVMj8y" />
+      <button type="button" class="btn btn-primary col-2" onclick="SearchButtonClick();">Search</button>
+    </div>
+  </div>
+
+  <div id="objkt-display" class="display-area">
+  </div>
+
+  <div id="fxhash-display" class="display-area">
+  </div>
+
+  <script>
+
+    function SearchButtonClick() {
+
+      let inputAddress = $('#inputAddress').val();
+
+      if (inputAddress != "") {
+        loadAndDisplayObjktSales(inputAddress);
+        loadAndDisplayFxhashSales(inputAddress);
+      }
+      else {
+        console.log("NO INPUT!!");
+      }
+    }
+
+    async function loadAndDisplayObjktSales(address) {
+
+      let allData = [];
+      let offset = 0;
+
+      while (true) {
+        let batchData = await getObjktSales(address, offset);
+
+        for (let i = 0; i < batchData.listing_sale.length; i++) {
+          allData.push(batchData.listing_sale[i]);
+        }
+
+        let dataCount = batchData.listing_sale.length;
+        console.log(dataCount);
+
+        if (dataCount >= 500) {
+          offset += 500;
+          continue;
+        }
+        else {
+          break;
+        }
+      }
+
+      console.log(allData);
+
+      for (let i = 0; i < allData.length; i++) {
+        let data = allData[i];
+        let displayString = `[${data.token.name}] ${xtzStrToValue(data.price)} xtz  ${data.timestamp}`;
+
+        let newLineData = $('<div></div>');
+        newLineData.html(displayString);
+
+        $('#objkt-display').append(newLineData);
+      }
+    }
+
+    async function loadAndDisplayFxhashSales(address) {
+
+      let allData = [];
+      let offset = 0;
+
+      while (true) {
+        let batchData = await getFxhashSales(address, offset);
+
+        for (let i = 0; i < batchData.user.sales.length; i++) {
+          allData.push(batchData.user.sales[i]);
+        }
+
+        let dataCount = batchData.user.sales.length
+        console.log(dataCount);
+
+        if (dataCount >= 20) {
+          offset += 20;
+          continue;
+        }
+        else {
+          break;
+        }
+      }
+
+      console.log(allData);
+
+      for (let i = 0; i < allData.length; i++) {
+        let data = allData[i];
+        let displayString = `[${data.token.name}] ${xtzStrToValue(data.numericValue)} xtz  ${data.createdAt}`;
+
+        let newLineData = $('<div></div>');
+        newLineData.html(displayString);
+
+        $('#fxhash-display').append(newLineData);
+      }
+    }
+
+    const OBJKT_API = "https://data.objkt.com/v3/graphql";
+    const FXHASH_API = "https://api.fxhash.xyz/graphql";
+
+    const objktQuery = `
+    query ObjktSale {
+      listing_sale(
+        where: {seller_address: {_eq: "$$seller_address$$"}}
+        order_by: {timestamp: desc}
+        offset: $$offset_value$$
+      ) {
+        price
+        buyer {
+          alias
+          address
+        }
+        timestamp
+        token {
+          fa_contract
+          token_id
+          name
+        }
+      }
+    }`;
+
+    const fxhashQuery = `
+    query fxhashSale {
+      user(id: "$$seller_address$$") {
+        sales (skip: $$offset_value$$) {
+          numericValue
+          createdAt
+          type
+          token {
+            name
+            id
+          }
+        }
+      }
+    }`;
+
+    async function getObjktSales(address, offset) {
+      let targetQuery = objktQuery.replace('$$seller_address$$', address);
+      targetQuery = targetQuery.replace('$$offset_value$$', offset);
+
+      console.log(targetQuery);
+
+      let resultData = await fetchGraphQL(OBJKT_API, targetQuery);
+      console.log(resultData);
+
+      return resultData;
+    }
+
+    async function getFxhashSales(address, offset) {
+      let targetQuery = fxhashQuery.replace('$$seller_address$$', address);
+      targetQuery = targetQuery.replace('$$offset_value$$', offset);
+
+      console.log(targetQuery);
+
+      let resultData = await fetchGraphQL(FXHASH_API, targetQuery);
+      console.log(resultData);
+
+      return resultData;
+    }
+
+    async function fetchGraphQL(apiUrl, operationsDoc) {
+      const result = await fetch(
+        apiUrl,
+        {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: operationsDoc
+          })
+        }
+      );
+
+      let jsonData = await result.json();
+      return jsonData.data;
+    }
+
+    function xtzStrToValue(inputData) {
+      let inputStr = inputData.toString();
+      let resultValue = 0;
+
+      if (inputStr.length <= 6)
+        resultValue = parseFloat(inputStr) / 1000000.0;
+      else
+        resultValue = inputStr.substr(0, inputStr.length - 6);
+
+      return resultValue;
+    }
+
+    function getIpfsUrl(ipfsStr) {
+      return ipfsStr.replace('ipfs://', 'https://gateway.fxhash.xyz/ipfs/');
+    }
+  </script>
+</body>
+
+</html>
