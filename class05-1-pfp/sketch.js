@@ -1,27 +1,32 @@
 
 
-let eyes = [];
-let bodies = [];
-let faces = [];
-let hairs = [];
-let mouths = [];
+let eyeIndex;
+let eyeImage;
+
+let bodyIndex;
+let bodyImage;
+
+let faceIndex;
+let faceImage;
+
+let hairIndex;
+let hairImage;
+
+let mouthIndex;
+let mouthImage;
 
 function preload() {
+  bodyIndex = int(random(0, 4));
+  eyeIndex = int(random(0, 4));
+  hairIndex = int(random(0, 4));
+  mouthIndex = int(random(0, 4));
+  faceIndex = int(random(0, 3));
 
-  for (let i = 0; i < 4; i++)
-    bodies[i] = loadImage('images/body-' + i + '.png');
-
-  for (let i = 0; i < 4; i++)
-    eyes[i] = loadImage('images/eye-' + i + '.png');
-
-  for (let i = 0; i < 3; i++)
-    faces[i] = loadImage('images/face-' + i + '.png');
-
-  for (let i = 0; i < 4; i++)
-    hairs[i] = loadImage('images/hair-' + i + '.png');
-
-  for (let i = 0; i < 4; i++)
-    mouths[i] = loadImage('images/mouth-' + i + '.png');
+  bodyImage = loadImage('images/body-' + bodyIndex + '.png');
+  eyeImage = loadImage('images/eye-' + eyeIndex + '.png');
+  hairImage = loadImage('images/hair-' + hairIndex + '.png');
+  mouthImage = loadImage('images/mouth-' + mouthIndex + '.png');
+  faceImage = loadImage('images/face-' + faceIndex + '.png');
 }
 
 function setup() {
@@ -34,18 +39,11 @@ function setup() {
 
   background(random(120, 200), random(120, 200), random(120, 200));
 
-  let bodyIndex = int(random(0, 4));
-  let eyeIndex = int(random(0, 4));
-  let faceIndex = int(random(0, 3));
-  let hairIndex = int(random(0, 4));
-  let mouthIndex = int(random(0, 4));
-
-  image(faces[faceIndex], 0, 0);
-  image(bodies[bodyIndex], 0, 0);
-  image(eyes[eyeIndex], 0, 0);
-  image(mouths[mouthIndex], 0, 0);
-  image(hairs[hairIndex], 0, 0);
-
+  image(faceImage, 0, 0);
+  image(bodyImage, 0, 0);
+  image(eyeImage, 0, 0);
+  image(mouthImage, 0, 0);
+  image(hairImage, 0, 0);
 }
 
 function draw() {
